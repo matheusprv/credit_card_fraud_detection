@@ -1,8 +1,9 @@
 import pandas as pd
 import numpy as np
 from value_mapper import ValueMapper
+import random
 
-class MyDataset:
+class PrepareDataset:
     def __init__(self, data_file):
         self.df = self._read_csv(data_file)
         self.df = self._drop_dolumns(self.df)
@@ -68,7 +69,7 @@ class MyDataset:
         df["time_sin"] = np.sin(2 * np.pi * df["trans_time"] / 1440)
         df["time_cos"] = np.cos(2 * np.pi * df["trans_time"] / 1440)
 
-        df.drop(columns=["trans_time"])
+        df = df.drop(columns=["trans_time"])
 
         return df
     
@@ -84,7 +85,7 @@ class MyDataset:
         df["date_sin"] = np.sin(2 * np.pi * df["trans_date"] / 372)
         df["date_cos"] = np.cos(2 * np.pi * df["trans_date"] / 372)
 
-        df.drop(columns=["trans_date"])
+        df = df.drop(columns=["trans_date"])
 
         return df
     
@@ -124,11 +125,9 @@ class MyDataset:
             df[f"{col}_mean"] = mean
             df[f"{col}_std"]  = np.sqrt(var)   # ddof=0 (igual np.std default)
 
-        df = df.drop(columns=["cc_num"])
+        # df = df.drop(columns=["cc_num"])
 
         return df
-
-
 
     # Código original
     # def _distribution_stats(self, df):
@@ -160,3 +159,30 @@ class MyDataset:
     #             df.loc[index, f"{col}_std"] = np.std(temp_arr)
 
     #     return df
+
+    def train_val_test_split(self, df):
+        """
+            Split based on the cc_num to prevent data leakage between train and evaluation steps
+        """
+
+        cc_nums = df["cc_num"].unique().tolist()
+    
+        rng = random.Random("inteligência computacional") 
+        rng.shuffle(cc_nums)
+        
+        cc_nums_test = cc_nums[:20]
+        cc_nums_val = cc_nums[20:40]
+        cc_nums_train = cc_nums[40:]
+
+
+        df_train = df[df["cc_num"].isin(cc_nums_train)]
+        df_val = df[df["cc_num"].isin(cc_nums_val)]
+        df_test = df[df["cc_num"].isin(cc_nums_test)]
+
+
+        df_train = df_train.drop(columns=["cc_num"])
+        df_val = df_val.drop(columns=["cc_num"])
+        df_test = df_test.drop(columns=["cc_num"])
+
+
+        return df_train, df_val, df_test
